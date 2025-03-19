@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat với Facebook RAG Bot</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/style.css') }}">
+    <style>
+        .chat-container {
+            max-width: 800px;
+            margin: 2rem auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 1rem;
+        }
+        .chat-messages {
+            height: 400px;
+            overflow-y: auto;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border: 1px solid #eee;
+            border-radius: 8px;
+        }
+        .message {
+            margin-bottom: 1rem;
+            padding: 0.5rem 1rem;
+            border-radius: 1rem;
+        }
+        .user-message {
+            background: #e3f2fd;
+            margin-left: 2rem;
+            margin-right: 1rem;
+        }
+        .bot-message {
+            background: #f5f5f5;
+            margin-right: 2rem;
+            margin-left: 1rem;
+        }
+        .chat-input {
+            display: flex;
+            gap: 1rem;
+            padding: 1rem;
+        }
+        .chat-input input {
+            flex: 1;
+            padding: 0.5rem 1rem;
+            border: 1px solid #ddd;
+            border-radius: 2rem;
+            outline: none;
+        }
+        .chat-input button {
+            padding: 0.5rem 2rem;
+            background: #1877f2;
+            color: white;
+            border: none;
+            border-radius: 2rem;
+            cursor: pointer;
+        }
+        .chat-input button:hover {
+            background: #1565c0;
+        }
+        .sources {
+            font-size: 0.9rem;
+            color: #666;
+            margin-top: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <nav class="nav">
+        <div class="nav-container">
+            <a href="/" class="nav-logo">Facebook RAG Chatbot</a>
+            <div class="nav-links">
+                <a href="/" class="nav-link">Trang chủ</a>
+                <div class="dropdown">
+                    <a href="#" class="nav-link active">Tính năng</a>
+                    <div class="dropdown-content">
+                        <div class="dropdown-header">Chọn tính năng</div>
+                        <a href="/chat-ui" class="dropdown-item active">Chat với Bot</a>
+                        <a href="/analyze-post" class="dropdown-item">Phân tích Bài đăng</a>
+                        <a href="/search" class="dropdown-item">Tìm kiếm</a>
+                    </div>
+                </div>
+                <div class="dropdown">
+                    <a href="#" class="nav-link">Tài liệu</a>
+                    <div class="dropdown-content">
+                        <div class="dropdown-header">Tài liệu hướng dẫn</div>
+                        <a href="/docs" class="dropdown-item">API Documentation</a>
+                        <a href="/docs#guide" class="dropdown-item">Hướng dẫn sử dụng</a>
+                        <a href="/docs#faq" class="dropdown-item">Câu hỏi thường gặp</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <header class="header">
+        <div class="container">
+            <h1>Chat với Bot</h1>
+            <p>Hãy đặt câu hỏi về Facebook, tôi sẽ giúp bạn tìm câu trả lời</p>
+        </div>
+    </header>
+
+    <main class="container">
+        <div class="chat-container">
+            <div id="chat-messages" class="chat-messages">
+                <div class="message bot-message">
+                    Xin chào! Tôi là chatbot chuyên về Facebook. Bạn có thể hỏi tôi bất kỳ câu hỏi nào về Facebook.
+                </div>
+            </div>
+            <div class="chat-input">
+                <input type="text" id="user-input" placeholder="Nhập câu hỏi của bạn..." autocomplete="off">
+                <button id="send-button" onclick="sendMessage()">Gửi</button>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 Facebook RAG Chatbot. Được phát triển bởi Phong.</p>
+        </div>
+    </footer>
+
+    <script>
+        const chatMessages = document.getElementById('chat-messages');
+        const userInput = document.getElementById('user-input');
+        const sendButton = document.getElementById('send-button');
+        let isProcessing = false;
+
+        userInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && !isProcessing) {
+                sendMessage();
+            }
+        });
+
+        function setLoading(isLoading) {
+            isProcessing = isLoading;
+            sendButton.disabled = isLoading;
+            userInput.disabled = isLoading;
+            sendButton.textContent = isLoading ? 'Đang xử lý...' : 'Gửi';
+        }
+
+        async function sendMessage() {
+            const message = userInput.value.trim();
+            if (!message || isProcessing) return;
+
+            // Add user message
+            addMessage(message, 'user');
+            userInput.value = '';
+
+            try {
+                setLoading(true);
+                
+                // Show loading message
+                const loadingId = addMessage('Đang suy nghĩ...', 'bot');
+
+                // Send request to API
+                const response = await fetch('/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ question: message })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+
+                const data = await response.json();
+
+                // Remove loading message
+                removeMessage(loadingId);
+
+                // Add bot response with sources
+                let botMessage = data.answer;
+                if (data.sources && data.sources.length > 0) {
+                    botMessage += '<div class="sources">Nguồn tham khảo:<br>' + 
+                        data.sources.join('<br>') + '</div>';
+                }
+                addMessage(botMessage, 'bot');
+
+            } catch (error) {
+                console.error('Error:', error);
+                addMessage('Xin lỗi, đã có lỗi xảy ra. Vui lòng thử lại sau.', 'bot');
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        function addMessage(text, type) {
+            const messageId = Date.now();
+            const messageDiv = document.createElement('div');
+            messageDiv.id = `message-${messageId}`;
+            messageDiv.className = `message ${type}-message`;
+            messageDiv.innerHTML = text;
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            return messageId;
+        }
+
+        function removeMessage(messageId) {
+            const message = document.getElementById(`message-${messageId}`);
+            if (message) {
+                message.remove();
+            }
+        }
+    </script>
+</body>
+</html> 

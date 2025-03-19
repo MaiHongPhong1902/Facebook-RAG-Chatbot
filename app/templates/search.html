@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tìm kiếm - Facebook RAG Chatbot</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/style.css') }}">
+    <style>
+        .search-container {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .search-form {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 0.75rem;
+            border: 2px solid #e1e1e1;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+
+        .search-button {
+            padding: 0.75rem 1.5rem;
+            background: #1877f2;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background 0.2s;
+        }
+
+        .search-button:hover {
+            background: #166fe5;
+        }
+
+        .search-results {
+            margin-top: 2rem;
+        }
+
+        .result-item {
+            padding: 1rem;
+            border-bottom: 1px solid #e1e1e1;
+        }
+
+        .result-item:last-child {
+            border-bottom: none;
+        }
+
+        .error-message {
+            color: #dc3545;
+            margin-top: 1rem;
+            display: none;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            margin-left: 0.5rem;
+        }
+
+        .spinner {
+            animation: rotate 2s linear infinite;
+            width: 20px;
+            height: 20px;
+            display: inline-block;
+        }
+
+        .path {
+            stroke: #ffffff;
+            stroke-linecap: round;
+            animation: dash 1.5s ease-in-out infinite;
+        }
+
+        @keyframes rotate {
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes dash {
+            0% {
+                stroke-dasharray: 1, 150;
+                stroke-dashoffset: 0;
+            }
+            50% {
+                stroke-dasharray: 90, 150;
+                stroke-dashoffset: -35;
+            }
+            100% {
+                stroke-dasharray: 90, 150;
+                stroke-dashoffset: -124;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="nav">
+        <div class="nav-container">
+            <a href="/" class="nav-logo">Facebook RAG Chatbot</a>
+            <div class="nav-links">
+                <a href="/" class="nav-link">Trang chủ</a>
+                <div class="dropdown">
+                    <a href="#" class="nav-link">Tính năng</a>
+                    <div class="dropdown-content">
+                        <div class="dropdown-header">Chọn tính năng</div>
+                        <a href="/chat-ui" class="dropdown-item">Chat với Bot</a>
+                        <a href="/analyze-post" class="dropdown-item">Phân tích Bài đăng</a>
+                        <a href="/search" class="dropdown-item active">Tìm kiếm</a>
+                    </div>
+                </div>
+                <div class="dropdown">
+                    <a href="#" class="nav-link">Tài liệu</a>
+                    <div class="dropdown-content">
+                        <div class="dropdown-header">Tài liệu hướng dẫn</div>
+                        <a href="/docs" class="dropdown-item">API Documentation</a>
+                        <a href="/docs#guide" class="dropdown-item">Hướng dẫn sử dụng</a>
+                        <a href="/docs#faq" class="dropdown-item">Câu hỏi thường gặp</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <header class="header">
+        <div class="container">
+            <h1>Tìm kiếm Thông tin Facebook</h1>
+            <p>Tìm kiếm thông tin chi tiết về Facebook từ cơ sở dữ liệu của chúng tôi</p>
+        </div>
+    </header>
+
+    <main class="container">
+        <div class="search-container">
+            <form id="search-form" class="search-form">
+                <input type="text" id="search-input" class="search-input" placeholder="Nhập từ khóa tìm kiếm..." required>
+                <button type="submit" id="search-button" class="search-button">
+                    <span class="button-text">Tìm kiếm</span>
+                    <span class="loading-spinner" style="display: none;">
+                        <svg class="spinner" viewBox="0 0 50 50">
+                            <circle class="path" cx="25" cy="25" r="20" fill="none" stroke-width="5"></circle>
+                        </svg>
+                    </span>
+                </button>
+            </form>
+            <div class="error-message" id="error-message"></div>
+            <div id="search-results" class="search-results" style="display: none;">
+                <h2>Kết quả Tìm kiếm</h2>
+                <div id="results-list"></div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 Facebook RAG Chatbot. Được phát triển bởi Phong.</p>
+        </div>
+    </footer>
+
+    <script>
+        const form = document.getElementById('search-form');
+        const searchButton = document.getElementById('search-button');
+        const buttonText = searchButton.querySelector('.button-text');
+        const loadingSpinner = searchButton.querySelector('.loading-spinner');
+        const resultsDiv = document.getElementById('search-results');
+        const resultsList = document.getElementById('results-list');
+        const errorMessage = document.getElementById('error-message');
+        let isProcessing = false;
+
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.style.display = 'block';
+        }
+
+        function hideError() {
+            errorMessage.style.display = 'none';
+        }
+
+        function setLoading(isLoading) {
+            isProcessing = isLoading;
+            searchButton.disabled = isLoading;
+            buttonText.textContent = isLoading ? 'Đang tìm kiếm...' : 'Tìm kiếm';
+            loadingSpinner.style.display = isLoading ? 'inline-block' : 'none';
+        }
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (isProcessing) return;
+
+            const query = document.getElementById('search-input').value.trim();
+            if (!query) {
+                showError('Vui lòng nhập từ khóa tìm kiếm');
+                return;
+            }
+
+            try {
+                setLoading(true);
+                hideError();
+
+                const response = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.detail || 'Có lỗi xảy ra khi tìm kiếm');
+                }
+
+                const data = await response.json();
+                
+                // Hiển thị kết quả
+                resultsList.innerHTML = '';
+                data.results.forEach(result => {
+                    const div = document.createElement('div');
+                    div.className = 'result-item';
+                    div.textContent = result;
+                    resultsList.appendChild(div);
+                });
+
+                resultsDiv.style.display = 'block';
+                resultsDiv.scrollIntoView({ behavior: 'smooth' });
+
+            } catch (error) {
+                console.error('Error:', error);
+                showError(error.message || 'Xin lỗi, đã có lỗi xảy ra. Vui lòng thử lại sau.');
+            } finally {
+                setLoading(false);
+            }
+        });
+    </script>
+</body>
+</html> 

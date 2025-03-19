@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phân tích Bài đăng Facebook</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/style.css') }}">
+    <style>
+        .error-message {
+            color: #dc3545;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+            display: none;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            margin-left: 0.5rem;
+        }
+
+        .spinner {
+            animation: rotate 2s linear infinite;
+            width: 20px;
+            height: 20px;
+            display: inline-block;
+        }
+
+        .path {
+            stroke: #ffffff;
+            stroke-linecap: round;
+            animation: dash 1.5s ease-in-out infinite;
+        }
+
+        @keyframes rotate {
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes dash {
+            0% {
+                stroke-dasharray: 1, 150;
+                stroke-dashoffset: 0;
+            }
+            50% {
+                stroke-dasharray: 90, 150;
+                stroke-dashoffset: -35;
+            }
+            100% {
+                stroke-dasharray: 90, 150;
+                stroke-dashoffset: -124;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="nav">
+        <div class="nav-container">
+            <a href="/" class="nav-logo">Facebook RAG Chatbot</a>
+            <div class="nav-links">
+                <a href="/" class="nav-link">Trang chủ</a>
+                <div class="dropdown">
+                    <a href="#" class="nav-link active">Tính năng</a>
+                    <div class="dropdown-content">
+                        <div class="dropdown-header">Chọn tính năng</div>
+                        <a href="/chat-ui" class="dropdown-item">Chat với Bot</a>
+                        <a href="/analyze-post" class="dropdown-item active">Phân tích Bài đăng</a>
+                        <a href="/search" class="dropdown-item">Tìm kiếm</a>
+                    </div>
+                </div>
+                <div class="dropdown">
+                    <a href="#" class="nav-link">Tài liệu</a>
+                    <div class="dropdown-content">
+                        <div class="dropdown-header">Tài liệu hướng dẫn</div>
+                        <a href="/docs" class="dropdown-item">API Documentation</a>
+                        <a href="/docs#guide" class="dropdown-item">Hướng dẫn sử dụng</a>
+                        <a href="/docs#faq" class="dropdown-item">Câu hỏi thường gặp</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <header class="header">
+        <div class="container">
+            <h1>Phân tích Bài đăng Facebook</h1>
+            <p>Phân tích chi tiết nội dung và cảm xúc từ bài đăng Facebook của bạn</p>
+        </div>
+    </header>
+
+    <main class="container">
+        <div class="analyze-container">
+            <form id="analyze-form" class="analyze-form">
+                <div class="form-group">
+                    <label for="post-url">URL Bài đăng Facebook</label>
+                    <input type="url" id="post-url" name="post_url" placeholder="https://www.facebook.com/..." required>
+                    <div class="error-message" id="url-error"></div>
+                </div>
+                <div class="form-group">
+                    <label for="post-content">Nội dung Bài đăng (tùy chọn)</label>
+                    <textarea id="post-content" name="post_content" rows="5" placeholder="Nhập nội dung bài đăng nếu không có URL..."></textarea>
+                </div>
+                <button type="submit" id="analyze-button">
+                    <span class="button-text">Phân tích</span>
+                    <span class="loading-spinner" style="display: none;">
+                        <svg class="spinner" viewBox="0 0 50 50">
+                            <circle class="path" cx="25" cy="25" r="20" fill="none" stroke-width="5"></circle>
+                        </svg>
+                    </span>
+                </button>
+            </form>
+            <div id="analysis-result" class="analysis-result" style="display: none;">
+                <h2>Kết quả Phân tích</h2>
+                <div class="result-content">
+                    <div class="result-section">
+                        <h3>Phân tích Chung</h3>
+                        <p id="general-analysis"></p>
+                    </div>
+                    <div class="result-section">
+                        <h3>Cảm xúc</h3>
+                        <p id="sentiment-analysis"></p>
+                    </div>
+                    <div class="result-section">
+                        <h3>Chủ đề Chính</h3>
+                        <ul id="key-topics"></ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 Facebook RAG Chatbot. Được phát triển bởi Phong.</p>
+        </div>
+    </footer>
+
+    <script>
+        const form = document.getElementById('analyze-form');
+        const analyzeButton = document.getElementById('analyze-button');
+        const buttonText = analyzeButton.querySelector('.button-text');
+        const loadingSpinner = analyzeButton.querySelector('.loading-spinner');
+        const resultDiv = document.getElementById('analysis-result');
+        const urlError = document.getElementById('url-error');
+        let isProcessing = false;
+
+        function showError(message) {
+            urlError.textContent = message;
+            urlError.style.display = 'block';
+        }
+
+        function hideError() {
+            urlError.style.display = 'none';
+        }
+
+        function setLoading(isLoading) {
+            isProcessing = isLoading;
+            analyzeButton.disabled = isLoading;
+            buttonText.textContent = isLoading ? 'Đang phân tích...' : 'Phân tích';
+            loadingSpinner.style.display = isLoading ? 'inline-block' : 'none';
+        }
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (isProcessing) return;
+
+            const postUrl = document.getElementById('post-url').value;
+            const postContent = document.getElementById('post-content').value;
+
+            hideError();
+
+            if (!postUrl && !postContent) {
+                showError('Vui lòng nhập URL hoặc nội dung bài đăng');
+                return;
+            }
+
+            try {
+                setLoading(true);
+
+                const response = await fetch('/analyze-post', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        post_url: postUrl,
+                        post_content: postContent
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.detail || 'Có lỗi xảy ra khi phân tích');
+                }
+
+                const data = await response.json();
+
+                // Hiển thị kết quả
+                document.getElementById('general-analysis').textContent = data.analysis;
+                document.getElementById('sentiment-analysis').textContent = data.sentiment;
+                
+                const topicsList = document.getElementById('key-topics');
+                topicsList.innerHTML = '';
+                data.key_topics.forEach(topic => {
+                    const li = document.createElement('li');
+                    li.textContent = topic;
+                    topicsList.appendChild(li);
+                });
+
+                resultDiv.style.display = 'block';
+                resultDiv.scrollIntoView({ behavior: 'smooth' });
+
+            } catch (error) {
+                console.error('Error:', error);
+                showError(error.message || 'Xin lỗi, đã có lỗi xảy ra. Vui lòng thử lại sau.');
+            } finally {
+                setLoading(false);
+            }
+        });
+    </script>
+</body>
+</html> 

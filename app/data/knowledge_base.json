@@ -1,0 +1,37 @@
+[
+    {
+        "id": "1",
+        "title": "Giới thiệu về Facebook",
+        "content": "Facebook là một mạng xã hội trực tuyến được thành lập năm 2004 bởi Mark Zuckerberg và các đồng sáng lập. Đây là nền tảng kết nối người dùng lớn nhất thế giới với hơn 2 tỷ người dùng hoạt động hàng tháng.",
+        "source": "Wikipedia",
+        "category": "general"
+    },
+    {
+        "id": "2",
+        "title": "Tính năng Facebook",
+        "content": "Facebook cung cấp nhiều tính năng đa dạng như: News Feed, Groups, Pages, Marketplace, Messenger, Stories, và Live. Người dùng có thể chia sẻ nội dung, tương tác với bạn bè, tham gia cộng đồng, mua bán và quảng cáo.",
+        "source": "Facebook Help Center",
+        "category": "features"
+    },
+    {
+        "id": "3",
+        "title": "Quyền riêng tư Facebook",
+        "content": "Facebook cho phép người dùng kiểm soát quyền riêng tư thông qua các cài đặt chi tiết. Bạn có thể chọn ai có thể xem bài đăng, thông tin cá nhân, và kiểm soát cách dữ liệu của bạn được sử dụng.",
+        "source": "Facebook Privacy Policy",
+        "category": "privacy"
+    },
+    {
+        "id": "4",
+        "title": "Quảng cáo Facebook",
+        "content": "Facebook Ads là nền tảng quảng cáo mạnh mẽ cho phép doanh nghiệp tiếp cận đối tượng mục tiêu chính xác. Bạn có thể tạo quảng cáo dựa trên nhân khẩu học, sở thích, hành vi và vị trí địa lý.",
+        "source": "Facebook Business",
+        "category": "business"
+    },
+    {
+        "id": "5",
+        "title": "Bảo mật Facebook",
+        "content": "Facebook cung cấp các tính năng bảo mật như xác thực hai yếu tố, mã hóa end-to-end cho Messenger, và kiểm tra hoạt động đăng nhập. Người dùng nên bật các tính năng bảo mật này để bảo vệ tài khoản.",
+        "source": "Facebook Security",
+        "category": "security"
+    }
+]

@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/style.css') }}">
+</head>
+<body>
+    <nav class="nav">
+        <div class="nav-container">
+            <a href="/" class="nav-logo">Facebook RAG Chatbot</a>
+            <div class="nav-links">
+                <a href="/" class="nav-link active">Trang chủ</a>
+                <div class="dropdown">
+                    <a href="#" class="nav-link">Tính năng</a>
+                    <div class="dropdown-content">
+                        <div class="dropdown-header">Chọn tính năng</div>
+                        <a href="/chat-ui" class="dropdown-item">Chat với Bot</a>
+                        <a href="/analyze-post" class="dropdown-item">Phân tích Bài đăng</a>
+                        <a href="/search" class="dropdown-item">Tìm kiếm</a>
+                    </div>
+                </div>
+                <div class="dropdown">
+                    <a href="#" class="nav-link">Tài liệu</a>
+                    <div class="dropdown-content">
+                        <div class="dropdown-header">Tài liệu hướng dẫn</div>
+                        <a href="/docs" class="dropdown-item">API Documentation</a>
+                        <a href="/docs#guide" class="dropdown-item">Hướng dẫn sử dụng</a>
+                        <a href="/docs#faq" class="dropdown-item">Câu hỏi thường gặp</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <header class="header">
+        <div class="container">
+            <h1>{{ title }}</h1>
+            <p>Chatbot thông minh với khả năng truy xuất và phân tích thông tin từ Facebook</p>
+        </div>
+    </header>
+
+    <main class="container">
+        <div class="cards">
+            <a href="/chat-ui" class="card">
+                <h3>Chat với Bot</h3>
+                <p>Tương tác trực tiếp với chatbot thông qua giao diện trò chuyện</p>
+            </a>
+            <a href="/docs" class="card">
+                <h3>API Documentation</h3>
+                <p>Tài liệu API đầy đủ cho các nhà phát triển</p>
+            </a>
+            <a href="/analyze-post" class="card">
+                <h3>Phân tích Bài đăng</h3>
+                <p>Phân tích chi tiết nội dung và cảm xúc từ bài đăng Facebook</p>
+            </a>
+            <a href="/search" class="card">
+                <h3>Tìm kiếm</h3>
+                <p>Tìm kiếm thông tin từ cơ sở dữ liệu Facebook</p>
+            </a>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 Facebook RAG Chatbot. Được phát triển bởi Phong.</p>
+        </div>
+    </footer>
+</body>
+</html> 
